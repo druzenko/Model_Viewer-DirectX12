@@ -19,16 +19,22 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="sources\CommandAllocatorPool.cpp" />
+    <ClCompile Include="sources\CommandListManager.cpp" />
     <ClCompile Include="sources\Core.cpp" />
     <ClCompile Include="sources\Graphics.cpp" />
+    <ClCompile Include="sources\GraphicsCommon.cpp" />
     <ClCompile Include="sources\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="headers\CommandAllocatorPool.h" />
+    <ClInclude Include="headers\CommandListManager.h" />
     <ClInclude Include="headers\Core.h" />
     <ClInclude Include="headers\Graphics.h" />
+    <ClInclude Include="headers\GraphicsCommon.h" />
     <ClInclude Include="headers\pch.h" />
     <ClInclude Include="headers\Utility.h" />
   </ItemGroup>
@@ -154,7 +160,7 @@
       </Command>
     </PostBuildEvent>
     <Lib>
-      <AdditionalDependencies>runtimeobject.lib</AdditionalDependencies>
+      <AdditionalDependencies>DXGI.lib;runtimeobject.lib;D3D12.lib;Shlwapi.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -183,7 +189,7 @@
       </Command>
     </PostBuildEvent>
     <Lib>
-      <AdditionalDependencies>runtimeobject.lib</AdditionalDependencies>
+      <AdditionalDependencies>DXGI.lib;runtimeobject.lib;D3D12.lib;</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

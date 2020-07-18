@@ -1,15 +1,24 @@
 #include "Core.h"
 #include "Graphics.h"
+#include <Shlwapi.h>
 
 namespace Core {
 
     void InitializeApplication(IApp& app)
     {
+        Graphics::Initialize();
         app.Startup();
     }
 
     bool UpdateApplication(IApp& app)
     {
+        float DeltaTime = Graphics::GetFrameTime();
+
+        app.Update(DeltaTime);
+        app.RenderScene();
+
+        Graphics::Present();
+
         return !app.IsDone();
     }
 
@@ -26,6 +35,14 @@ namespace Core {
 
 	void RunApplication(IApp& app, const wchar_t* className)
 	{
+        WCHAR path[MAX_PATH];
+        HMODULE hModule = GetModuleHandleW(NULL);
+        if (GetModuleFileNameW(hModule, path, MAX_PATH) > 0)
+        {
+            PathRemoveFileSpecW(path);
+            SetCurrentDirectoryW(path);
+        }
+
 		Microsoft::WRL::Wrappers::RoInitializeWrapper InitializeWinRT(RO_INIT_TYPE::RO_INIT_MULTITHREADED);
 		ASSERT_SUCCEEDED(InitializeWinRT);
 
