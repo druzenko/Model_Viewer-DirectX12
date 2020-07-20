@@ -5,6 +5,7 @@
 #include <Core.h>
 #include <Graphics.h>
 #include <Utility.h>
+#include <chrono>
 
 class ModelViewer : public Core::IApp
 {
@@ -19,7 +20,15 @@ private:
 
     // App resources.
     Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexBuffer;
+    Microsoft::WRL::ComPtr<ID3D12Resource> m_indexBuffer;
     D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
+    D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
+
+    DirectX::XMMATRIX m_ModelMatrix;
+    DirectX::XMMATRIX m_ViewMatrix;
+    DirectX::XMMATRIX m_ProjectionMatrix;
+
+    float m_FoV = 45.0f;
 
     // Synchronization objects.
     UINT m_frameIndex;
@@ -100,7 +109,16 @@ void ModelViewer::PopulateCommandList()
     m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-    m_commandList->DrawInstanced(3, 1, 0, 0);
+    m_commandList->IASetIndexBuffer(&m_indexBufferView);
+
+    // Update the MVP matrix
+    DirectX::XMMATRIX mvpMatrix = XMMatrixMultiply(m_ModelMatrix, m_ViewMatrix);
+    mvpMatrix = XMMatrixMultiply(mvpMatrix, m_ProjectionMatrix);
+    m_commandList->SetGraphicsRoot32BitConstants(0, sizeof(DirectX::XMMATRIX) / 4, &mvpMatrix, 0);
+
+
+    //m_commandList->DrawInstanced(3, 1, 0, 0);
+    m_commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
 
     // Indicate that the back buffer will now be used to present.
     D3D12_RESOURCE_BARRIER barrier2 = {};
@@ -118,18 +136,41 @@ void ModelViewer::PopulateCommandList()
 
 void ModelViewer::Startup()
 {
-    // Create an empty root signature.
+    // Create a root signature.
     {
-        D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-        rootSignatureDesc.NumParameters = 0;
-        rootSignatureDesc.pParameters = nullptr;
-        rootSignatureDesc.NumStaticSamplers = 0;
-        rootSignatureDesc.pStaticSamplers = nullptr;
-        rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+        D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
+        featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+        if (Graphics::g_Device->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData)) < 0)
+        {
+            featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+        }
+
+        // Allow input layout and deny unnecessary access to certain pipeline stages.
+        D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
+            D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+            D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+            D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+            D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
+            D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+
+        D3D12_ROOT_PARAMETER1 rootParameter;
+        rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+        rootParameter.Constants.Num32BitValues = sizeof(DirectX::XMMATRIX) / sizeof(float);
+        rootParameter.Constants.RegisterSpace = 0;
+        rootParameter.Constants.ShaderRegister = 0;
+
+        D3D12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
+        rootSignatureDesc.Version = featureData.HighestVersion;
+        rootSignatureDesc.Desc_1_1.NumParameters = 1;
+        rootSignatureDesc.Desc_1_1.pParameters = &rootParameter;
+        rootSignatureDesc.Desc_1_1.NumStaticSamplers = 0;
+        rootSignatureDesc.Desc_1_1.pStaticSamplers = nullptr;
+        rootSignatureDesc.Desc_1_1.Flags = rootSignatureFlags;
 
         Microsoft::WRL::ComPtr<ID3DBlob> signature;
         Microsoft::WRL::ComPtr<ID3DBlob> error;
-        ASSERT_SUCCEEDED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
+        ASSERT_SUCCEEDED(D3D12SerializeVersionedRootSignature(&rootSignatureDesc, &signature, &error));
         ASSERT_SUCCEEDED(Graphics::g_Device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
     }
 
@@ -144,10 +185,6 @@ void ModelViewer::Startup()
 #else
         UINT compileFlags = 0;
 #endif
-
-        const int len = 500;
-        wchar_t pBuf[len];
-        int bytes = GetModuleFileNameW(NULL, pBuf, len);
 
         ASSERT_SUCCEEDED(D3DReadFileToBlob(L"vertex_simple.cso", &vertexShader));
         ASSERT_SUCCEEDED(D3DReadFileToBlob(L"pixel_simple.cso", &pixelShader));
@@ -195,13 +232,20 @@ void ModelViewer::Startup()
 
         Vertex triangleVertices[] =
         {
-            { { 0.0f, 0.25f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-            
-            { { -0.25f, -0.25f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
-            { { 0.25f, -0.25f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
+            { { -1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
+            { { -1.0f, -1.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
+            { { 1.0f, -1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
+            { { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
+            { { -1.0f, 1.0f, -1.0f }, { 0.0f, 0.0f, 0.0f, 1.0f } },
+            { { -1.0f, -1.0f, -1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } },
+            { { 1.0f, -1.0f, -1.0f }, {1.0f, 1.0f, 0.0f, 1.0f } },
+            { { 1.0f, 1.0f, -1.0f }, { 1.0f, 0.0f, 1.0f, 1.0f } },
         };
 
+        UINT16 indices[] = {0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 3, 6, 2, 3, 7, 6, 0, 1, 5, 4, 0, 5, 4, 3, 0, 4, 7, 3, 1, 2, 5, 2, 6, 5};
+
         const UINT vertexBufferSize = sizeof(triangleVertices);
+        const UINT indexBufferSize = sizeof(indices);
 
         // Note: using upload heaps to transfer static data like vert buffers is not 
         // recommended. Every time the GPU needs it, the upload heap will be marshalled 
@@ -246,6 +290,26 @@ void ModelViewer::Startup()
         m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
         m_vertexBufferView.StrideInBytes = sizeof(Vertex);
         m_vertexBufferView.SizeInBytes = vertexBufferSize;
+
+        ResourceDesc.Width = indexBufferSize;
+        ASSERT_SUCCEEDED(Graphics::g_Device->CreateCommittedResource(
+            &HeapProps,
+            D3D12_HEAP_FLAG_NONE,
+            &ResourceDesc,
+            D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&m_indexBuffer)));
+
+        // Copy the indices data to the index buffer.
+        UINT8* pIndexDataBegin;
+        ASSERT_SUCCEEDED(m_indexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pIndexDataBegin)));
+        memcpy(pIndexDataBegin, indices, indexBufferSize);
+        m_indexBuffer->Unmap(0, nullptr);
+
+        // Initialize the vertex buffer view.
+        m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
+        m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;
+        m_indexBufferView.SizeInBytes = indexBufferSize;
     }
 
     // Create synchronization objects and wait until assets have been uploaded to the GPU.
@@ -275,7 +339,30 @@ void ModelViewer::Cleanup()
 
 void ModelViewer::Update(float deltaT)
 {
+    static float totalTime = 0.0f;
+    
+    std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
+    static std::chrono::high_resolution_clock::time_point lastTime = std::chrono::high_resolution_clock::now();
+    std::chrono::high_resolution_clock::duration deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
 
+    deltaT = deltaTime.count() * 1e-9;
+    totalTime += deltaT;
+
+    // Update the model matrix.
+    float angle = static_cast<float>(totalTime * 90.0);
+    const DirectX::XMVECTOR rotationAxis = DirectX::XMVectorSet(0, 1, 1, 0);
+    m_ModelMatrix = DirectX::XMMatrixRotationAxis(rotationAxis, DirectX::XMConvertToRadians(angle));
+
+    // Update the view matrix.
+    const DirectX::XMVECTOR eyePosition = DirectX::XMVectorSet(0, 0, -10, 1);
+    const DirectX::XMVECTOR focusPoint = DirectX::XMVectorSet(0, 0, 0, 1);
+    const DirectX::XMVECTOR upDirection = DirectX::XMVectorSet(0, 1, 0, 0);
+    m_ViewMatrix = DirectX::XMMatrixLookAtLH(eyePosition, focusPoint, upDirection);
+
+    // Update the projection matrix.
+    float aspectRatio = Graphics::g_DisplayWidth / static_cast<float>(Graphics::g_DisplayHeight);
+    m_ProjectionMatrix = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(m_FoV), aspectRatio, 0.1f, 100.0f);
 }
 
 void ModelViewer::RenderScene()

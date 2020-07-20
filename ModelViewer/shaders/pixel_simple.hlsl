@@ -17,6 +17,5 @@ struct PSInput
 
 float4 main(PSInput input) : SV_TARGET
 {
-    //return input.color;
-    return float4(0.0f, 1.0, 0.0, 1.0);
+    return input.color;
 }
