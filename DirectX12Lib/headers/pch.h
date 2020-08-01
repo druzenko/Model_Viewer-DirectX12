@@ -25,11 +25,13 @@
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 
-//#include <d3dx12.h>
+#include <d3dx12.h>
 //#include <d3dx12Residency.h>
 
 #include <iostream>
 
 #include "Utility.h"
+
+#include <DirectXTex.h>
 
 #endif //PCH_H

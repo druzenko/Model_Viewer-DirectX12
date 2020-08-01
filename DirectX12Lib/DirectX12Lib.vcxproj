@@ -148,7 +148,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
-      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\Libraries\D3DX12Residency;$(SolutionDir)$(ProjectName)\Libraries\D3DX12;$(SolutionDir)$(ProjectName)\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)ThirdPartyLibs\DIrectXTex\DIrectXTex;$(SolutionDir)$(ProjectName)\Libraries\D3DX12Residency;$(SolutionDir)$(ProjectName)\Libraries\D3DX12;$(SolutionDir)$(ProjectName)\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -160,7 +160,8 @@
       </Command>
     </PostBuildEvent>
     <Lib>
-      <AdditionalDependencies>DXGI.lib;runtimeobject.lib;D3D12.lib;Shlwapi.lib</AdditionalDependencies>
+      <AdditionalDependencies>DXGI.lib;runtimeobject.lib;D3D12.lib;Shlwapi.lib;dxguid.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)ThirdPartyLib\DIrectXTex\DIrectXTex\Bin\Desktop_2019_Win10\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -175,7 +176,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
-      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\Libraries\D3DX12Residency;$(SolutionDir)$(ProjectName)\Libraries\D3DX12;$(SolutionDir)$(ProjectName)\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)ThirdPartyLibs\DIrectXTex\DIrectXTex;$(SolutionDir)$(ProjectName)\Libraries\D3DX12Residency;$(SolutionDir)$(ProjectName)\Libraries\D3DX12;$(SolutionDir)$(ProjectName)\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -189,7 +190,8 @@
       </Command>
     </PostBuildEvent>
     <Lib>
-      <AdditionalDependencies>DXGI.lib;runtimeobject.lib;D3D12.lib;</AdditionalDependencies>
+      <AdditionalDependencies>DXGI.lib;runtimeobject.lib;D3D12.lib;Shlwapi.lib;dxguid.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)ThirdPartyLib\DIrectXTex\DIrectXTex\Bin\Desktop_2019_Win10\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

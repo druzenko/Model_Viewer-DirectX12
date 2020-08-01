@@ -1,7 +1,6 @@
 //#include <iostream>
-#include <d3d12.h>
+#include <d3dx12.h>
 #include <wrl/client.h>
-//#include <pch.h>
 #include <Core.h>
 #include <Graphics.h>
 #include <Utility.h>
@@ -17,12 +16,16 @@ private:
     Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rootSignature;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
     Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList;
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>    srvDescriptorHeap_;
 
     // App resources.
     Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexBuffer;
     Microsoft::WRL::ComPtr<ID3D12Resource> m_indexBuffer;
     D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
     D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
+
+    Microsoft::WRL::ComPtr<ID3D12Resource>	image_;
+    Microsoft::WRL::ComPtr<ID3D12Resource>	uploadImage_;
 
     DirectX::XMMATRIX m_ModelMatrix;
     DirectX::XMMATRIX m_ViewMatrix;
@@ -105,16 +108,24 @@ void ModelViewer::PopulateCommandList()
     m_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 
     // Record commands.
-    const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+    const float clearColor[] = { 1.0f, 1.0f, 1.1f, 1.0f };
     m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
     m_commandList->IASetIndexBuffer(&m_indexBufferView);
 
+    // Set the descriptor heap containing the texture srv
+    ID3D12DescriptorHeap* heaps[] = { srvDescriptorHeap_.Get() };
+    m_commandList->SetDescriptorHeaps(1, heaps);
+
+    // Set slot 0 of our root signature to point to our descriptor heap with
+    // the texture SRV
+    m_commandList->SetGraphicsRootDescriptorTable(0, srvDescriptorHeap_->GetGPUDescriptorHandleForHeapStart());
+
     // Update the MVP matrix
     DirectX::XMMATRIX mvpMatrix = XMMatrixMultiply(m_ModelMatrix, m_ViewMatrix);
     mvpMatrix = XMMatrixMultiply(mvpMatrix, m_ProjectionMatrix);
-    m_commandList->SetGraphicsRoot32BitConstants(0, sizeof(DirectX::XMMATRIX) / 4, &mvpMatrix, 0);
+    m_commandList->SetGraphicsRoot32BitConstants(1, sizeof(DirectX::XMMATRIX) / 4, &mvpMatrix, 0);
 
 
     //m_commandList->DrawInstanced(3, 1, 0, 0);
@@ -136,6 +147,22 @@ void ModelViewer::PopulateCommandList()
 
 void ModelViewer::Startup()
 {
+    // We need one descriptor heap to store our texture SRV which cannot go
+    // into the root signature. So create a SRV type heap with one entry
+    D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc = {};
+    descriptorHeapDesc.NumDescriptors = 1;
+    // This heap contains SRV, UAV or CBVs -- in our case one SRV
+    descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    descriptorHeapDesc.NodeMask = 0;
+    descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+    Graphics::g_Device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&srvDescriptorHeap_));
+
+    //load texture
+    auto image = std::make_unique<DirectX::ScratchImage>();
+    HRESULT hr = LoadFromWICFile(L"../../resources/container2.png", DirectX::WIC_FLAGS_NONE, nullptr, *image);
+
+
     // Create a root signature.
     {
         D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
@@ -147,30 +174,60 @@ void ModelViewer::Startup()
 
         // Allow input layout and deny unnecessary access to certain pipeline stages.
         D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
-            D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+            D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;// |
+            //D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+            //D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+            //D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;// |
+            //D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
 
-        D3D12_ROOT_PARAMETER1 rootParameter;
-        rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-        rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-        rootParameter.Constants.Num32BitValues = sizeof(DirectX::XMMATRIX) / sizeof(float);
-        rootParameter.Constants.RegisterSpace = 0;
-        rootParameter.Constants.ShaderRegister = 0;
+        D3D12_ROOT_PARAMETER1 rootParameters[2];
+
+        D3D12_DESCRIPTOR_RANGE1 range;
+        range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        range.NumDescriptors = 1;
+        range.BaseShaderRegister = 0;
+        range.RegisterSpace = 0;
+        range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
+        range.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+        rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
+        rootParameters[0].DescriptorTable.pDescriptorRanges = &range;
+
+        D3D12_STATIC_SAMPLER_DESC samplerDesc;
+        samplerDesc.ShaderRegister = 0;
+        samplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+        samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        samplerDesc.MipLODBias = 0;
+        samplerDesc.MaxAnisotropy = 16;
+        samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+        samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+        samplerDesc.MinLOD = 0.0f;
+        samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+        samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        samplerDesc.RegisterSpace = 0;
+
+        rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+        rootParameters[1].Constants.Num32BitValues = sizeof(DirectX::XMMATRIX) / sizeof(float);
+        rootParameters[1].Constants.RegisterSpace = 0;
+        rootParameters[1].Constants.ShaderRegister = 0;
 
         D3D12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
         rootSignatureDesc.Version = featureData.HighestVersion;
-        rootSignatureDesc.Desc_1_1.NumParameters = 1;
-        rootSignatureDesc.Desc_1_1.pParameters = &rootParameter;
-        rootSignatureDesc.Desc_1_1.NumStaticSamplers = 0;
-        rootSignatureDesc.Desc_1_1.pStaticSamplers = nullptr;
+        rootSignatureDesc.Desc_1_1.NumParameters = 2;
+        rootSignatureDesc.Desc_1_1.pParameters = rootParameters;
+        rootSignatureDesc.Desc_1_1.NumStaticSamplers = 1;
+        rootSignatureDesc.Desc_1_1.pStaticSamplers = &samplerDesc;
         rootSignatureDesc.Desc_1_1.Flags = rootSignatureFlags;
 
         Microsoft::WRL::ComPtr<ID3DBlob> signature;
         Microsoft::WRL::ComPtr<ID3DBlob> error;
         ASSERT_SUCCEEDED(D3D12SerializeVersionedRootSignature(&rootSignatureDesc, &signature, &error));
+
         ASSERT_SUCCEEDED(Graphics::g_Device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
     }
 
@@ -193,7 +250,8 @@ void ModelViewer::Startup()
         D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
         {
             { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT , D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-            { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT , D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+            { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT , D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+            { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
         };
 
         // Describe and create the graphics pipeline state object (PSO).
@@ -219,7 +277,7 @@ void ModelViewer::Startup()
 
     // Command lists are created in the recording state, but there is nothing
     // to record yet. The main loop expects it to be closed, so close it now.
-    ASSERT_SUCCEEDED(m_commandList->Close());
+    
 
     // Create the vertex buffer.
     {
@@ -228,18 +286,19 @@ void ModelViewer::Startup()
         {
             float position[3];
             float color[4];
+            float texCoord[2];
         };
 
         Vertex triangleVertices[] =
         {
-            { { -1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-            { { -1.0f, -1.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-            { { 1.0f, -1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
-            { { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
-            { { -1.0f, 1.0f, -1.0f }, { 0.0f, 0.0f, 0.0f, 1.0f } },
-            { { -1.0f, -1.0f, -1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } },
-            { { 1.0f, -1.0f, -1.0f }, {1.0f, 1.0f, 0.0f, 1.0f } },
-            { { 1.0f, 1.0f, -1.0f }, { 1.0f, 0.0f, 1.0f, 1.0f } },
+            { { -1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
+            { { -1.0f, -1.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
+            { { 1.0f, -1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
+            { { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f } },
+            { { -1.0f, 1.0f, -1.0f }, { 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
+            { { -1.0f, -1.0f, -1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } },
+            { { 1.0f, -1.0f, -1.0f }, {1.0f, 1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
+            { { 1.0f, 1.0f, -1.0f }, { 1.0f, 0.0f, 1.0f, 1.0f }, { 1.0f, 0.0f } },
         };
 
         UINT16 indices[] = {0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 3, 6, 2, 3, 7, 6, 0, 1, 5, 4, 0, 5, 4, 3, 0, 4, 7, 3, 1, 2, 5, 2, 6, 5};
@@ -310,7 +369,78 @@ void ModelViewer::Startup()
         m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
         m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;
         m_indexBufferView.SizeInBytes = indexBufferSize;
+
+
+
+        static const auto defaultHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+        const auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(image->GetMetadata().format, image->GetMetadata().width, image->GetMetadata().height, 1, 1);
+
+        Graphics::g_Device->CreateCommittedResource(&defaultHeapProperties,
+            D3D12_HEAP_FLAG_NONE,
+            &resourceDesc,
+            D3D12_RESOURCE_STATE_COPY_DEST,
+            nullptr,
+            IID_PPV_ARGS(&image_));
+
+        static const auto uploadHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+        const auto uploadBufferSize = GetRequiredIntermediateSize(image_.Get(), 0, 1);
+        const auto uploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
+
+        Graphics::g_Device->CreateCommittedResource(&uploadHeapProperties,
+            D3D12_HEAP_FLAG_NONE,
+            &uploadBufferDesc,
+            D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&uploadImage_));
+
+        D3D12_SUBRESOURCE_DATA srcData;
+        srcData.pData = image->GetPixels();
+        srcData.RowPitch = image->GetMetadata().width * 4;
+        srcData.SlicePitch = image->GetMetadata().width * image->GetMetadata().height * 4;
+
+        UpdateSubresources(m_commandList.Get(), image_.Get(), uploadImage_.Get(), 0, 0, 1, &srcData);
+        const auto transition = CD3DX12_RESOURCE_BARRIER::Transition(image_.Get(),
+            D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        m_commandList->ResourceBarrier(1, &transition);
+
+        D3D12_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
+        shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        shaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        shaderResourceViewDesc.Format = image->GetMetadata().format;
+        shaderResourceViewDesc.Texture2D.MipLevels = 1;
+        shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+        shaderResourceViewDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+
+        Graphics::g_Device->CreateShaderResourceView(image_.Get(), &shaderResourceViewDesc,
+            srvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
     }
+
+    ASSERT_SUCCEEDED(m_commandList->Close());
+
+    Microsoft::WRL::ComPtr<ID3D12Fence> uploadFence;
+    Graphics::g_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&uploadFence));
+
+    // Execute the upload and finish the command list
+    ID3D12CommandList* commandLists[] = { m_commandList.Get() };
+    Graphics::m_commandQueue->ExecuteCommandLists(std::extent<decltype(commandLists)>::value, commandLists);
+    Graphics::m_commandQueue->Signal(uploadFence.Get(), 1);
+
+    auto waitEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+
+    if (waitEvent == NULL) {
+        throw std::runtime_error("Could not create wait event.");
+    }
+
+    if (uploadFence->GetCompletedValue() < 1)
+    {
+        uploadFence->SetEventOnCompletion(1, waitEvent);
+        WaitForSingleObject(waitEvent, INFINITE);
+    }
+
+    // Cleanup our upload handle
+    //Graphics::m_commandAllocator->Reset();
+
+    CloseHandle(waitEvent);
 
     // Create synchronization objects and wait until assets have been uploaded to the GPU.
     {
@@ -327,7 +457,7 @@ void ModelViewer::Startup()
         // Wait for the command list to execute; we are reusing the same command 
         // list in our main loop but for now, we just want to wait for setup to 
         // complete before continuing.
-        WaitForPreviousFrame();
+        //WaitForPreviousFrame();
     }
 }
 

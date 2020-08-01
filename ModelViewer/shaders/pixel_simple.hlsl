@@ -1,21 +1,16 @@
-//*********************************************************
-//
-// Copyright (c) Microsoft. All rights reserved.
-// This code is licensed under the MIT License (MIT).
-// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
-// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
-// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
-// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
-//
-//*********************************************************
-
 struct PSInput
 {
     float4 position : SV_POSITION;
     float4 color    : COLOR;
+    float2 uv : TEXCOORD;
 };
+
+Texture2D<float4> anteruTexture : register(t0);
+
+SamplerState texureSampler      : register(s0);
 
 float4 main(PSInput input) : SV_TARGET
 {
-    return input.color;
+    //return input.color;
+    return anteruTexture.Sample(texureSampler, input.uv);
 }
