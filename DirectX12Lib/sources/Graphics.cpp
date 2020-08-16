@@ -1,5 +1,9 @@
 #include "Graphics.h"
+#include "SystemTime.h"
 #include "CommandListManager.h"
+#include "CommandContext.h"
+#include <algorithm>
+#include <cmath>
 
 // This macro determines whether to detect if there is an HDR display and enable HDR10 output.
 // Currently, with HDR display enabled, the pixel magnfication functionality is broken.
@@ -24,15 +28,19 @@ namespace Graphics {
 	uint32_t g_DisplayHeight = 640;
 
     Microsoft::WRL::ComPtr<IDXGISwapChain1> s_SwapChain1;
-    Microsoft::WRL::ComPtr<ID3D12Device> g_Device;
+    ID3D12Device* g_Device = nullptr;
     CommandListManager g_CommandManager;
+    ContextManager g_ContextManager;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> g_DisplayPlane[SWAP_CHAIN_BUFFER_COUNT];
 
     bool g_bTypedUAVLoadSupport_R11G11B10_FLOAT = false;
     bool g_bTypedUAVLoadSupport_R16G16B16A16_FLOAT = false;
     bool g_bEnableHDROutput = false;
+    bool g_bEnableVSync = true;
+    bool g_bSupportTearing = false;
 
+    UINT g_CurrentBuffer = 0;
     float s_FrameTime = 0.0f;
     uint64_t s_FrameIndex = 0;
     int64_t s_FrameStartTick = 0;
@@ -42,6 +50,65 @@ namespace Graphics {
     uint32_t m_rtvDescriptorSize;
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator;
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
+
+    DescriptorAllocator g_DescriptorAllocator[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] =
+    {
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+        D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
+        D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
+        D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
+    };
+
+    void Resize(uint32_t width, uint32_t height)
+    {
+        ASSERT(s_SwapChain1 != nullptr);
+
+        // Check for invalid window dimensions
+        if (width == 0 || height == 0)
+            return;
+
+        // Check for an unneeded resize
+        if (width == g_DisplayWidth && height == g_DisplayHeight)
+            return;
+
+        //g_CommandManager.IdleGPU();
+
+        g_DisplayWidth = width;
+        g_DisplayHeight = height;
+
+        DEBUGPRINT("Changing display resolution to %ux%u", width, height);
+
+        //g_PreDisplayBuffer.Create(L"PreDisplay Buffer", width, height, 1, SwapChainFormat);
+
+        for (uint32_t i = 0; i < SWAP_CHAIN_BUFFER_COUNT; ++i)
+            //g_DisplayPlane[i].Destroy();
+            g_DisplayPlane[i].Reset();
+
+        ASSERT_SUCCEEDED(s_SwapChain1->ResizeBuffers(SWAP_CHAIN_BUFFER_COUNT, width, height, SwapChainFormat, 0));
+
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
+
+        // Create a RTV for each frame.
+        for (uint32_t i = 0; i < SWAP_CHAIN_BUFFER_COUNT; ++i)
+        {
+            ASSERT_SUCCEEDED(s_SwapChain1->GetBuffer(i, IID_PPV_ARGS(&g_DisplayPlane[i])));
+            g_Device->CreateRenderTargetView(g_DisplayPlane[i].Get(), nullptr, rtvHandle);
+            rtvHandle.ptr += m_rtvDescriptorSize;
+        }
+
+        /*for (uint32_t i = 0; i < SWAP_CHAIN_BUFFER_COUNT; ++i)
+        {
+            Microsoft::WRL::ComPtr<ID3D12Resource> DisplayPlane;
+            ASSERT_SUCCEEDED(s_SwapChain1->GetBuffer(i, IID_PPV_ARGS(&DisplayPlane)));
+            g_DisplayPlane[i].CreateFromSwapChain(L"Primary SwapChain Buffer", DisplayPlane.Detach());
+        }*/
+
+        g_CurrentBuffer = 0;
+
+        //g_CommandManager.IdleGPU();
+
+        //ResizeDisplayDependentBuffers(g_NativeWidth, g_NativeHeight);
+    }
 
 	// Initialize the DirectX resources required to run.
 	void Initialize(void)
@@ -202,6 +269,15 @@ namespace Graphics {
             }
         }
 
+        //check tearing support
+        Microsoft::WRL::ComPtr<IDXGIFactory5> factory5;
+        if (SUCCEEDED(dxgiFactory.As(&factory5))
+            && SUCCEEDED(factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &g_bSupportTearing, sizeof(g_bSupportTearing)))
+            && g_bSupportTearing)
+        {
+            g_bEnableVSync = false;
+        }
+
         //g_CommandManager.Create(g_Device);
         // Describe and create the command queue.
         D3D12_COMMAND_QUEUE_DESC queueDesc = {};
@@ -218,8 +294,8 @@ namespace Graphics {
         swapChainDesc.SampleDesc.Count = 1;
         swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         swapChainDesc.BufferCount = SWAP_CHAIN_BUFFER_COUNT;
-        swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+        swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | (g_bSupportTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
+        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
         ASSERT_SUCCEEDED(dxgiFactory->CreateSwapChainForHwnd(/*g_CommandManager.GetCommandQueue()*/m_commandQueue.Get(), Core::g_hWnd, &swapChainDesc, nullptr, nullptr, &s_SwapChain1));
 
@@ -305,7 +381,16 @@ namespace Graphics {
 
     void Present(void)
     {
-        
+        g_CurrentBuffer = (g_CurrentBuffer + 1) % SWAP_CHAIN_BUFFER_COUNT;
+
+        UINT PresentInterval = g_bEnableVSync ? std::min(4, static_cast<int>(round(s_FrameTime * 60.0f))) : 0;
+        UINT Flags = g_bSupportTearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
+        //s_SwapChain1->Present(PresentInterval, Flags);
+
+        int64_t CurrentTick = SystemTime::GetCurrentTick();
+        s_FrameTime = (float)SystemTime::TimeBetweenTicks(s_FrameStartTick, CurrentTick);
+        s_FrameStartTick = CurrentTick;
+        ++s_FrameIndex;
     }
 
     uint64_t GetFrameCount(void)

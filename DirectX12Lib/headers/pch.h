@@ -24,6 +24,7 @@
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
+#include "VectorMath.h"
 
 #include <d3dx12.h>
 //#include <d3dx12Residency.h>
@@ -33,5 +34,8 @@
 #include "Utility.h"
 
 #include <DirectXTex.h>
+
+#define D3D12_GPU_VIRTUAL_ADDRESS_NULL      ((D3D12_GPU_VIRTUAL_ADDRESS)0)
+#define D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN   ((D3D12_GPU_VIRTUAL_ADDRESS)-1)
 
 #endif //PCH_H

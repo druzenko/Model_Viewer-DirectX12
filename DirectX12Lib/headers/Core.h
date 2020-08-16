@@ -25,6 +25,9 @@ namespace Core
         // Optional UI (overlay) rendering pass.  This is LDR.  The buffer is already cleared.
         virtual void RenderUI(class GraphicsContext&) {};
 
+        //Temporal functional
+        virtual void OnResize() {};
+
         virtual ~IApp() {}
     };
 

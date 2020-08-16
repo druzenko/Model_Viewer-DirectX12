@@ -13,6 +13,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Libraries">
+      <UniqueIdentifier>{1207a431-fc9c-428b-9d2a-01d551065dff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libraries\Math">
+      <UniqueIdentifier>{ba8af141-797a-4c62-b145-81c4368fab1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libraries\D3DX12">
+      <UniqueIdentifier>{d8c10915-bb39-4f97-97db-47d2e9531beb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sources\pch.cpp">
@@ -31,6 +40,78 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sources\CommandAllocatorPool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\SystemTime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\RootSignature.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\Math\Frustum.cpp">
+      <Filter>Libraries\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\Math\Random.cpp">
+      <Filter>Libraries\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\GPUBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\PixelBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\ReadbackBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\CommandContext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\ColorBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\Color.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\BufferManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\DepthBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\ShadowBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\PipelineState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\TextureManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\LinearAllocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\DescriptorHeap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\CommandSignature.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\Utility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\SamplerManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\FileUtility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\DDSTextureLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\DynamicDescriptorHeap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -56,5 +137,121 @@
     <ClInclude Include="headers\GraphicsCommon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="headers\SystemTime.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\RootSignature.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\Hash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\Math\BoundingPlane.h">
+      <Filter>Libraries\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\Math\BoundingSphere.h">
+      <Filter>Libraries\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\Math\Common.h">
+      <Filter>Libraries\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\Math\Frustum.h">
+      <Filter>Libraries\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\Math\Matrix3.h">
+      <Filter>Libraries\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\Math\Matrix4.h">
+      <Filter>Libraries\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\Math\Quaternion.h">
+      <Filter>Libraries\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\Math\Random.h">
+      <Filter>Libraries\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\Math\Scalar.h">
+      <Filter>Libraries\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\Math\Transform.h">
+      <Filter>Libraries\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\Math\Vector.h">
+      <Filter>Libraries\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\D3DX12\d3dx12.h">
+      <Filter>Libraries\D3DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\Math\VectorMath.h">
+      <Filter>Libraries\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\GPUResource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\GPUBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\PixelBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\ReadbackBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\CommandContext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\ColorBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\Color.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\BufferManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\DepthBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\EsramAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\ShadowBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\PipelineState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\TextureManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\DynamicDescriptorHeap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\LinearAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\DescriptorHeap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\CommandSignature.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\SamplerManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\FileUtility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="headers\DDSTextureLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Libraries\Math\Functions.inl">
+      <Filter>Libraries\Math</Filter>
+    </None>
   </ItemGroup>
 </Project>

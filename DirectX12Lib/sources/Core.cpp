@@ -1,12 +1,17 @@
 #include "Core.h"
 #include "Graphics.h"
 #include <Shlwapi.h>
+#include "SystemTime.h"
 
 namespace Core {
+
+    //temporal global variable
+    IApp* gApp = nullptr;
 
     void InitializeApplication(IApp& app)
     {
         Graphics::Initialize();
+        SystemTime::Initialize();
         app.Startup();
     }
 
@@ -35,6 +40,8 @@ namespace Core {
 
 	void RunApplication(IApp& app, const wchar_t* className)
 	{
+        gApp = &app;
+
         WCHAR path[MAX_PATH];
         HMODULE hModule = GetModuleHandleW(NULL);
         if (GetModuleFileNameW(hModule, path, MAX_PATH) > 0)
@@ -118,7 +125,9 @@ namespace Core {
         switch (message)
         {
         case WM_SIZE:
-            //Graphics::Resize((UINT)(UINT64)lParam & 0xFFFF, (UINT)(UINT64)lParam >> 16);
+            gApp->OnResize();
+            Graphics::Resize((UINT)(UINT64)lParam & 0xFFFF, (UINT)(UINT64)lParam >> 16);
+            gApp->OnResize();
             break;
 
         case WM_DESTROY:

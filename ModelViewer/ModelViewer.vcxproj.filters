@@ -30,4 +30,27 @@
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\resources\awesomeface.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\blending_transparent_window.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\container.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\container2.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\container2_specular.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\grass.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\wall.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
 </Project>

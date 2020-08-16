@@ -19,24 +19,88 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Libraries\Math\Frustum.cpp" />
+    <ClCompile Include="Libraries\Math\Random.cpp" />
+    <ClCompile Include="sources\BufferManager.cpp" />
+    <ClCompile Include="sources\Camera.cpp" />
+    <ClCompile Include="sources\Color.cpp" />
+    <ClCompile Include="sources\ColorBuffer.cpp" />
     <ClCompile Include="sources\CommandAllocatorPool.cpp" />
+    <ClCompile Include="sources\CommandContext.cpp" />
     <ClCompile Include="sources\CommandListManager.cpp" />
+    <ClCompile Include="sources\CommandSignature.cpp" />
     <ClCompile Include="sources\Core.cpp" />
+    <ClCompile Include="sources\DDSTextureLoader.cpp" />
+    <ClCompile Include="sources\DepthBuffer.cpp" />
+    <ClCompile Include="sources\DescriptorHeap.cpp" />
+    <ClCompile Include="sources\DynamicDescriptorHeap.cpp" />
+    <ClCompile Include="sources\FileUtility.cpp" />
+    <ClCompile Include="sources\GPUBuffer.cpp" />
     <ClCompile Include="sources\Graphics.cpp" />
     <ClCompile Include="sources\GraphicsCommon.cpp" />
+    <ClCompile Include="sources\LinearAllocator.cpp" />
     <ClCompile Include="sources\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="sources\PipelineState.cpp" />
+    <ClCompile Include="sources\PixelBuffer.cpp" />
+    <ClCompile Include="sources\ReadbackBuffer.cpp" />
+    <ClCompile Include="sources\RootSignature.cpp" />
+    <ClCompile Include="sources\SamplerManager.cpp" />
+    <ClCompile Include="sources\ShadowBuffer.cpp" />
+    <ClCompile Include="sources\SystemTime.cpp" />
+    <ClCompile Include="sources\TextureManager.cpp" />
+    <ClCompile Include="sources\Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="headers\BufferManager.h" />
+    <ClInclude Include="headers\Camera.h" />
+    <ClInclude Include="headers\Color.h" />
+    <ClInclude Include="headers\ColorBuffer.h" />
     <ClInclude Include="headers\CommandAllocatorPool.h" />
+    <ClInclude Include="headers\CommandContext.h" />
     <ClInclude Include="headers\CommandListManager.h" />
+    <ClInclude Include="headers\CommandSignature.h" />
     <ClInclude Include="headers\Core.h" />
+    <ClInclude Include="headers\DDSTextureLoader.h" />
+    <ClInclude Include="headers\DepthBuffer.h" />
+    <ClInclude Include="headers\DescriptorHeap.h" />
+    <ClInclude Include="headers\DynamicDescriptorHeap.h" />
+    <ClInclude Include="headers\EsramAllocator.h" />
+    <ClInclude Include="headers\GPUBuffer.h" />
+    <ClInclude Include="headers\GPUResource.h" />
     <ClInclude Include="headers\Graphics.h" />
     <ClInclude Include="headers\GraphicsCommon.h" />
+    <ClInclude Include="headers\Hash.h" />
+    <ClInclude Include="headers\FileUtility.h" />
+    <ClInclude Include="headers\SamplerManager.h" />
+    <ClInclude Include="headers\LinearAllocator.h" />
     <ClInclude Include="headers\pch.h" />
+    <ClInclude Include="headers\PipelineState.h" />
+    <ClInclude Include="headers\PixelBuffer.h" />
+    <ClInclude Include="headers\ReadbackBuffer.h" />
+    <ClInclude Include="headers\RootSignature.h" />
+    <ClInclude Include="headers\ShadowBuffer.h" />
+    <ClInclude Include="headers\SystemTime.h" />
+    <ClInclude Include="headers\TextureManager.h" />
     <ClInclude Include="headers\Utility.h" />
+    <ClInclude Include="Libraries\D3DX12\d3dx12.h" />
+    <ClInclude Include="Libraries\Math\BoundingPlane.h" />
+    <ClInclude Include="Libraries\Math\BoundingSphere.h" />
+    <ClInclude Include="Libraries\Math\Common.h" />
+    <ClInclude Include="Libraries\Math\Frustum.h" />
+    <ClInclude Include="Libraries\Math\Matrix3.h" />
+    <ClInclude Include="Libraries\Math\Matrix4.h" />
+    <ClInclude Include="Libraries\Math\Quaternion.h" />
+    <ClInclude Include="Libraries\Math\Random.h" />
+    <ClInclude Include="Libraries\Math\Scalar.h" />
+    <ClInclude Include="Libraries\Math\Transform.h" />
+    <ClInclude Include="Libraries\Math\Vector.h" />
+    <ClInclude Include="Libraries\Math\VectorMath.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Libraries\Math\Functions.inl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -148,7 +212,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
-      <AdditionalIncludeDirectories>$(SolutionDir)ThirdPartyLibs\DIrectXTex\DIrectXTex;$(SolutionDir)$(ProjectName)\Libraries\D3DX12Residency;$(SolutionDir)$(ProjectName)\Libraries\D3DX12;$(SolutionDir)$(ProjectName)\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)ThirdPartyLibs\zlib-vc140-static-64.1.2.11\lib\native\include;$(SolutionDir)ThirdPartyLibs\WinPixEventRuntime.1.0.181206001\Include\WinPixEventRuntime;$(SolutionDir)ThirdPartyLibs\DIrectXTex\DIrectXTex;$(SolutionDir)$(ProjectName)\Libraries\D3DX12Residency;$(SolutionDir)$(ProjectName)\Libraries\D3DX12;$(SolutionDir)$(ProjectName)\Libraries\Math;$(SolutionDir)$(ProjectName)\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -160,8 +224,8 @@
       </Command>
     </PostBuildEvent>
     <Lib>
-      <AdditionalDependencies>DXGI.lib;runtimeobject.lib;D3D12.lib;Shlwapi.lib;dxguid.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)ThirdPartyLib\DIrectXTex\DIrectXTex\Bin\Desktop_2019_Win10\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Shlwapi.lib;dxguid.lib;zlibstatic.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)ThirdPartyLibs\WinPixEventRuntime.1.0.181206001\bin;$(SolutionDir)ThirdPartyLibs\zlib-vc140-static-64.1.2.11\lib\native\libs\$(Platform)\static\$(Configuration);$(SolutionDir)ThirdPartyLibs\DIrectXTex\DIrectXTex\Bin\Desktop_2019_Win10\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -176,7 +240,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
-      <AdditionalIncludeDirectories>$(SolutionDir)ThirdPartyLibs\DIrectXTex\DIrectXTex;$(SolutionDir)$(ProjectName)\Libraries\D3DX12Residency;$(SolutionDir)$(ProjectName)\Libraries\D3DX12;$(SolutionDir)$(ProjectName)\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)ThirdPartyLibs\zlib-vc140-static-64.1.2.11\lib\native\include;$(SolutionDir)ThirdPartyLibs\WinPixEventRuntime.1.0.181206001\Include\WinPixEventRuntime;$(SolutionDir)ThirdPartyLibs\DIrectXTex\DIrectXTex;$(SolutionDir)$(ProjectName)\Libraries\D3DX12Residency;$(SolutionDir)$(ProjectName)\Libraries\D3DX12;$(SolutionDir)$(ProjectName)\Libraries\Math;$(SolutionDir)$(ProjectName)\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -190,8 +254,8 @@
       </Command>
     </PostBuildEvent>
     <Lib>
-      <AdditionalDependencies>DXGI.lib;runtimeobject.lib;D3D12.lib;Shlwapi.lib;dxguid.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)ThirdPartyLib\DIrectXTex\DIrectXTex\Bin\Desktop_2019_Win10\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Shlwapi.lib;dxguid.lib;zlibstatic.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)ThirdPartyLibs\WinPixEventRuntime.1.0.181206001\bin;$(SolutionDir)ThirdPartyLibs\zlib-vc140-static-64.1.2.11\lib\native\libs\$(Platform)\static\$(Configuration);$(SolutionDir)ThirdPartyLibs\DIrectXTex\DIrectXTex\Bin\Desktop_2019_Win10\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

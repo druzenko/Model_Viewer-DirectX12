@@ -1,10 +1,10 @@
 //#include <iostream>
 #include <d3dx12.h>
 #include <wrl/client.h>
+#include <Utility.h>
 #include <Core.h>
 #include <Graphics.h>
-#include <Utility.h>
-#include <chrono>
+
 
 class ModelViewer : public Core::IApp
 {
@@ -50,6 +50,7 @@ public:
 	void Cleanup() override;
 	void Update(float deltaT) override;
 	void RenderScene() override;
+    void OnResize() override;
 };
 
 CREATE_APPLICATION(ModelViewer)
@@ -77,6 +78,8 @@ void ModelViewer::WaitForPreviousFrame()
 
 void ModelViewer::PopulateCommandList()
 {
+    m_viewport = { 0.0f, 0.0f, static_cast<float>(Graphics::g_DisplayWidth), static_cast<float>(Graphics::g_DisplayHeight), D3D12_MIN_DEPTH, D3D12_MAX_DEPTH };
+
     // Command list allocators can only be reset when the associated 
     // command lists have finished execution on the GPU; apps should use 
     // fences to determine GPU execution progress.
@@ -160,7 +163,7 @@ void ModelViewer::Startup()
 
     //load texture
     auto image = std::make_unique<DirectX::ScratchImage>();
-    HRESULT hr = LoadFromWICFile(L"../../resources/container2.png", DirectX::WIC_FLAGS_NONE, nullptr, *image);
+    HRESULT hr = LoadFromWICFile(L"../../resources/wall.jpg", DirectX::WIC_FLAGS_NONE, nullptr, *image);
 
 
     // Create a root signature.
@@ -195,8 +198,8 @@ void ModelViewer::Startup()
         rootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
         rootParameters[0].DescriptorTable.pDescriptorRanges = &range;
 
-        D3D12_STATIC_SAMPLER_DESC samplerDesc;
-        samplerDesc.ShaderRegister = 0;
+        CD3DX12_STATIC_SAMPLER_DESC samplerDesc;
+        /*samplerDesc.ShaderRegister = 0;
         samplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
         samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -208,7 +211,8 @@ void ModelViewer::Startup()
         samplerDesc.MinLOD = 0.0f;
         samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
         samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        samplerDesc.RegisterSpace = 0;
+        samplerDesc.RegisterSpace = 0;*/
+        samplerDesc.Init(0, D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT);
 
         rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
         rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
@@ -470,14 +474,7 @@ void ModelViewer::Cleanup()
 void ModelViewer::Update(float deltaT)
 {
     static float totalTime = 0.0f;
-    
-    std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
-    static std::chrono::high_resolution_clock::time_point lastTime = std::chrono::high_resolution_clock::now();
-    std::chrono::high_resolution_clock::duration deltaTime = currentTime - lastTime;
-    lastTime = currentTime;
-
-    deltaT = deltaTime.count() * 1e-9;
-    totalTime += deltaT;
+    //totalTime += deltaT;
 
     // Update the model matrix.
     float angle = static_cast<float>(totalTime * 90.0);
@@ -507,5 +504,10 @@ void ModelViewer::RenderScene()
     // Present the frame.
     ASSERT_SUCCEEDED(Graphics::s_SwapChain1->Present(1, 0));
 
+    WaitForPreviousFrame();
+}
+
+void ModelViewer::OnResize()
+{
     WaitForPreviousFrame();
 }

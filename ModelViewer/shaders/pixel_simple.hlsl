@@ -12,5 +12,7 @@ SamplerState texureSampler      : register(s0);
 float4 main(PSInput input) : SV_TARGET
 {
     //return input.color;
-    return anteruTexture.Sample(texureSampler, input.uv);
+    float4 color = anteruTexture.Sample(texureSampler, input.uv);
+    return color;
+    //return anteruTexture.Sample(texureSampler, input.uv);
 }
